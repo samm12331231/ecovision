@@ -7,7 +7,24 @@ from glob import glob
 
 print(f"Device: CPU — starting overnight training (~6 hours)")
 
-LOVEDA_TO_UAE = {0: 255, 1: 3, 2: 3, 3: 2, 4: 1, 5: 0, 6: 0}
+# LoveDA label scheme (1-indexed): 0=no-data, 1=background, 2=building,
+# 3=road, 4=water, 5=barren, 6=forest, 7=agriculture.
+# UAE classes: 0=vegetation, 1=sand, 2=water, 3=urban (255=ignore).
+#
+# NOTE: the previous mapping {0:255,1:3,2:3,3:2,4:1,5:0,6:0} was scrambled —
+# it dropped agriculture (7) entirely, labeled barren (5) as vegetation, and
+# swapped road/water. That is why the trained model under-predicts vegetation.
+# Corrected, semantically-sound mapping below (retrain required to take effect):
+LOVEDA_TO_UAE = {
+    0: 255,  # no-data   -> ignore
+    1: 1,    # background -> sand   (arid catch-all; adjust if your AOI differs)
+    2: 3,    # building   -> urban
+    3: 3,    # road       -> urban
+    4: 2,    # water      -> water
+    5: 1,    # barren     -> sand   (bare ground, NOT vegetation)
+    6: 0,    # forest     -> vegetation
+    7: 0,    # agriculture-> vegetation  (was missing before)
+}
 
 class SimpleDataset(Dataset):
     def __init__(self, images, masks, processor):

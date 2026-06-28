@@ -1,19 +1,26 @@
-
+# ---- Python ----
 venv/
-
 __pycache__/
-
 *.pyc
-
-data/
-
-models/*.pt
-
-models/*.bin
-
+*.egg-info/
 .DS_Store
 
-*.egg-info/
-
+# ---- Large datasets (LoveDA + YOLO data) — never commit ----
 Train/
 Val/
+data/
+
+# ---- Logs & temp ----
+*.log
+*.tmp
+
+# ---- Base weights auto-downloaded by ultralytics ----
+/yolov8n.pt
+/yolov8n-seg.pt
+
+# ---- Model training artifacts (bloat) ----
+# The app only needs:  segformer-b0-final/  and  yolo .../weights/best.pt
+# (best.pt is force-added past this ignore — see the push steps)
+backend/models/segformer-b0-checkpoints/
+backend/models/segformer-b0-final-backup/
+backend/models/yolo-runs/

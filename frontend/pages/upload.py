@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import io
 
 def upload_section():
     st.header("📤 Input")
@@ -18,9 +19,10 @@ def upload_section():
     
     if uploaded_file is not None and st.button("🚀 Analyze", type="primary"):
         with st.spinner("Processing..."):
-            files = {"image": uploaded_file.getvalue()}
+            # Proper multipart format for requests
+            files = [("image", (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type))]
             if baseline_file:
-                files["baseline"] = baseline_file.getvalue()
+                files.append(("baseline", (baseline_file.name, baseline_file.getvalue(), baseline_file.type)))
             
             try:
                 response = requests.post(
@@ -28,10 +30,18 @@ def upload_section():
                     files=files,
                     data={"mode": "full"}
                 )
-                result = response.json()
-                image_data = uploaded_file
-                st.success(f"Done in {result['processing_time_ms']}ms")
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    # Pass BytesIO so dashboard can do Image.open()
+                    image_data = io.BytesIO(uploaded_file.getvalue())
+                    st.success(f"✅ Done in {result['processing_time_ms']}ms")
+                else:
+                    st.error(f"Backend returned {response.status_code}: {response.text[:200]}")
+                    
+            except requests.exceptions.ConnectionError:
+                st.error("❌ Cannot connect to backend. Is `uvicorn backend.main:app --port 8000` running?")
             except Exception as e:
-                st.error(f"Backend error: {e}")
+                st.error(f"Error: {e}")
     
     return result, image_data
